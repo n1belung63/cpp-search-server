@@ -50,7 +50,7 @@ struct Document {
 };
 
 class SearchServer {
-public:    
+public:
     void SetStopWords(const string& text) {
         for (const string& word : SplitIntoWords(text)) {
             stop_words_.insert(word);
@@ -59,11 +59,12 @@ public:
 
     void AddDocument(int document_id, const string& document) {   
         const vector<string> words = SplitIntoWordsNoStop(document);
+        float tf_partion = 1.0/words.size();
         if (!words.empty()) {
             document_count_++;
         }
         for (const string & word : words) {
-            word_to_document_freqs_[word][document_id] += 1.0/words.size();
+            word_to_document_freqs_[word][document_id] += tf_partion;
         }
     }
 
@@ -81,10 +82,25 @@ public:
         return matched_documents;
     }
 
-private:   
+private:
+    enum WordAttr {
+        None,
+        Plus, 
+        Minus, 
+        Stop 
+    };
+
+    /* 
+    struct Word {
+        string word;
+        WordAttr attr;
+    };
+    */
+
     struct Query {
         set<string> plus_words;
         set<string> minus_words;
+        map<string, WordAttr> words_with_attr;
     };
     
     int document_count_ = 0; 
@@ -110,15 +126,25 @@ private:
     Query ParseQuery(const string& text) const {
         Query query_words;
         string cut_word;
-        for (const string& word : SplitIntoWordsNoStop(text)) {
+        for (const string& word : SplitIntoWords(text)) {
             if (word.at(0) == '-') {
                 cut_word = word.substr(1);
                 if (!IsStopWord(cut_word)) {
                     query_words.minus_words.insert(cut_word);
+                    query_words.words_with_attr[cut_word] = Minus;
+                }
+                else {
+                    query_words.words_with_attr[cut_word] = Stop;
                 }
             }
             else {
-                query_words.plus_words.insert(word);
+                if (!IsStopWord(cut_word)) {
+                    query_words.plus_words.insert(word);
+                    query_words.words_with_attr[cut_word] = Plus;
+                }
+                else {
+                    query_words.words_with_attr[cut_word] = Stop;
+                }
             }
         }
         
@@ -132,18 +158,18 @@ private:
         
         for (const string & word : query_words.plus_words) {
             if (word_to_document_freqs_.count(word) != 0) {
-                idf = log( static_cast<double>(document_count_) / static_cast<double>(word_to_document_freqs_.at(word).size()) );
+                idf = CalculateIdf(word);
                 for (const auto & [id, tf] : word_to_document_freqs_.at(word)) {
                     document_to_relevance[id] += idf * tf;
                 }
-            }
+            }  
         }
         
         for (const string & word : query_words.minus_words) {
             if (word_to_document_freqs_.count(word) != 0) {
                 for (const auto & [id, tf] : word_to_document_freqs_.at(word)) {
                     document_to_relevance.erase(id);
-                }        
+                }    
             }
         }
         
@@ -152,6 +178,10 @@ private:
         }
  
         return matched_documents;
+    }
+
+    double CalculateIdf(const string& word) const {
+        return log( static_cast<double>(document_count_) / static_cast<double>(word_to_document_freqs_.at(word).size()) );
     }
 };
 
