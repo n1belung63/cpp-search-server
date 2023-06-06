@@ -83,25 +83,36 @@ public:
     }
 
 private:
+    /*
     enum WordAttr {
         None,
         Plus, 
         Minus, 
         Stop 
     };
-
-    /* 
-    struct Word {
-        string word;
-        WordAttr attr;
-    };
     */
 
+    struct QueryWord {
+        string data;
+        bool is_minus;
+        bool is_stop;
+    };
+
+    
     struct Query {
         set<string> plus_words;
         set<string> minus_words;
-        map<string, WordAttr> words_with_attr;
+        //map<string, WordAttr> words_with_attr;
     };
+    
+    QueryWord ParseQueryWord(string text) const {
+        bool is_minus = false;
+        if (text[0] == '-') {
+            is_minus = true;
+            text = text.substr(1);
+        }
+        return {text, is_minus, IsStopWord(text)};
+    }
     
     int document_count_ = 0; 
     
@@ -125,25 +136,14 @@ private:
 
     Query ParseQuery(const string& text) const {
         Query query_words;
-        string cut_word;
+
         for (const string& word : SplitIntoWords(text)) {
-            if (word.at(0) == '-') {
-                cut_word = word.substr(1);
-                if (!IsStopWord(cut_word)) {
-                    query_words.minus_words.insert(cut_word);
-                    query_words.words_with_attr[cut_word] = Minus;
-                }
-                else {
-                    query_words.words_with_attr[cut_word] = Stop;
-                }
-            }
-            else {
-                if (!IsStopWord(cut_word)) {
-                    query_words.plus_words.insert(word);
-                    query_words.words_with_attr[cut_word] = Plus;
-                }
-                else {
-                    query_words.words_with_attr[cut_word] = Stop;
+            const QueryWord query_word = ParseQueryWord(word);
+            if (!query_word.is_stop) {
+                if (query_word.is_minus) {
+                    query_words.minus_words.insert(query_word.data);
+                } else {
+                    query_words.plus_words.insert(query_word.data);
                 }
             }
         }
