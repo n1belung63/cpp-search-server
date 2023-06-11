@@ -3,6 +3,13 @@
         "vector": "cpp",
         "xstring": "cpp",
         "xtree": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "xlocale": "cpp",
+        "iostream": "cpp",
+        "initializer_list": "cpp",
+        "xutility": "cpp",
+        "set": "cpp",
+        "cmath": "cpp",
+        "algorithm": "cpp"
     }
 }
