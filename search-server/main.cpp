@@ -291,6 +291,20 @@ ostream& operator<<(ostream& out, const map<Key, Value>& container) {
     out << "}"s;
     return out;
 }
+
+ostream& operator<<(ostream& out, DocumentStatus status)
+{
+    switch(status)
+    {
+        case DocumentStatus::ACTUAL : return out << "DocumentStatus::ACTUAL"s ;
+        case DocumentStatus::BANNED : return out << "DocumentStatus::BANNED"s ;
+        case DocumentStatus::IRRELEVANT : return out << "DocumentStatus::IRRELEVANT"s ;
+        case DocumentStatus::REMOVED : return out << "DocumentStatus::REMOVED"s ;
+    }
+
+    return out;
+}
+
 template <typename T, typename U>
 void AssertEqualImpl(const T& t, const U& u, const string& t_str, const string& u_str, const string& file,
                      const string& func, unsigned line, const string& hint) {
@@ -337,6 +351,19 @@ void RunTestImpl(const Func& func, const string& func_name) {
 #define RUN_TEST(func)  RunTestImpl((func), #func)
 
 // -------- Начало модульных тестов поисковой системы ----------
+
+void TestAddingDocuments() {
+    const int doc_id = 2;
+    const string content = "fluffy cat fluffy tail"s;
+    const vector<int> ratings = {7, 2, 7};
+
+    {
+        SearchServer server;
+        ASSERT_EQUAL_HINT(server.GetDocumentCount(), 0u, "Server should be empty"s);
+        server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
+        ASSERT_EQUAL_HINT(server.GetDocumentCount(), 1u, "Server should contain 1 document"s);
+    }
+}
 
 void TestFindDocumentByQuery() {
     const int doc_id = 2;
@@ -387,7 +414,7 @@ void TestExcludeDocumentWithMinusWords() {
         server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
         server.AddDocument(2, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s);
-        ASSERT_EQUAL(found_docs.size(), 2);
+        ASSERT_EQUAL(found_docs.size(), 2u);
     }
 
     {
@@ -395,7 +422,7 @@ void TestExcludeDocumentWithMinusWords() {
         server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
         server.AddDocument(2, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat -collar"s);
-        ASSERT_EQUAL(found_docs.size(), 1);
+        ASSERT_EQUAL(found_docs.size(), 1u);
     }
 }
 
@@ -403,20 +430,22 @@ void TestMatchingDocuments() {
     const int doc_id = 2;
     const string content = "fluffy cat fluffy tail"s;
     const vector<int> ratings = {7, 2, 7};
+    const DocumentStatus status = DocumentStatus::ACTUAL;
 
     {
         SearchServer server;
-        server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        const auto [words, status] = server.MatchDocument("fluffy groomed cat"s, doc_id);
-        ASSERT_EQUAL(words.size(), 2);
+        server.AddDocument(doc_id, content, status, ratings);
+        const auto [words, doc_status] = server.MatchDocument("fluffy groomed cat"s, doc_id);
+        ASSERT_EQUAL(words.size(), 2u);
         ASSERT_EQUAL(words.at(0), "cat"s);
-        ASSERT_EQUAL(words.at(1), "fluffy"s);       
+        ASSERT_EQUAL(words.at(1), "fluffy"s);   
+        ASSERT_EQUAL(status, doc_status);
     }
 
     {
         SearchServer server;
-        server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        const auto [words, status] = server.MatchDocument("-fluffy groomed cat"s, doc_id);
+        server.AddDocument(doc_id, content, status, ratings);
+        const auto [words, doc_status] = server.MatchDocument("-fluffy groomed cat"s, doc_id);
         ASSERT_HINT(words.empty(), "Document mast be excluded by minus word"s);     
     }
 }
@@ -427,7 +456,7 @@ void TestSortingByRelevance() {
         server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
         server.AddDocument(2, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s);
-        ASSERT_EQUAL(found_docs.size(), 2);
+        ASSERT_EQUAL(found_docs.size(), 2u);
         const Document& doc0 = found_docs[0];
         const Document& doc1 = found_docs[1];
         ASSERT_HINT(doc0.relevance > doc1.relevance, "Wrong order"s);
@@ -438,13 +467,13 @@ void TestAveragingRating() {
     const int doc_id = 2;
     const string content = "fluffy cat fluffy tail"s;
     const vector<int> ratings = {7, 2, 7};
-    const int averaged_rating = 5;
+    const int averaged_rating = accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size());
 
     {
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s);
-        ASSERT_EQUAL(found_docs.size(), 1);
+        ASSERT_EQUAL(found_docs.size(), 1u);
         const Document& doc0 = found_docs[0];
         ASSERT_HINT(doc0.rating == averaged_rating, "Wrong average rating"s);
     }
@@ -459,7 +488,7 @@ void TestFilteringByPredicat() {
         server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
         server.AddDocument(3, "groomed starling evgeny"s, DocumentStatus::BANNED, {9});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
-        ASSERT_EQUAL(found_docs.size(), 2);
+        ASSERT_EQUAL(found_docs.size(), 2u);
         const Document& doc0 = found_docs[0];
         ASSERT_EQUAL(doc0.id, 0);
         const Document& doc1 = found_docs[1];
@@ -472,13 +501,39 @@ void TestFindDocumentsWithStatus() {
         SearchServer server;
         server.SetStopWords("and in on"s);
         server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
-        server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
-        server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
+        server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::IRRELEVANT, {7, 2, 7});
+        server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::REMOVED, {5, -12, 2, 1});
         server.AddDocument(3, "groomed starling evgeny"s, DocumentStatus::BANNED, {9});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s, DocumentStatus::BANNED);
-        ASSERT_EQUAL(found_docs.size(), 1);
+        ASSERT_EQUAL(found_docs.size(), 1u);
         const Document& doc0 = found_docs[0];
         ASSERT_EQUAL(doc0.id, 3);
+    }
+
+    {
+        SearchServer server;
+        server.SetStopWords("and in on"s);
+        server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
+        server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::IRRELEVANT, {7, 2, 7});
+        server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::REMOVED, {5, -12, 2, 1});
+        server.AddDocument(3, "groomed starling evgeny"s, DocumentStatus::BANNED, {9});
+        const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s, DocumentStatus::IRRELEVANT);
+        ASSERT_EQUAL(found_docs.size(), 1u);
+        const Document& doc0 = found_docs[0];
+        ASSERT_EQUAL(doc0.id, 1);
+    }
+
+    {
+        SearchServer server;
+        server.SetStopWords("and in on"s);
+        server.AddDocument(0, "white cat and fashionable collar"s, DocumentStatus::ACTUAL, {8, -3});
+        server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::IRRELEVANT, {7, 2, 7});
+        server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::REMOVED, {5, -12, 2, 1});
+        server.AddDocument(3, "groomed starling evgeny"s, DocumentStatus::BANNED, {9});
+        const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s, DocumentStatus::REMOVED);
+        ASSERT_EQUAL(found_docs.size(), 1u);
+        const Document& doc0 = found_docs[0];
+        ASSERT_EQUAL(doc0.id, 2);
     }
 }
 
@@ -491,13 +546,15 @@ void TestRelevanceCalculation() {
         server.AddDocument(2, "groomed dog expressive eyes"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
         server.AddDocument(3, "groomed starling evgeny"s, DocumentStatus::BANNED, {9});
         const auto found_docs = server.FindTopDocuments("fluffy groomed cat"s);
-        ASSERT_EQUAL(found_docs.size(), 3);
+        ASSERT_EQUAL(found_docs.size(), 3u);
         const Document& doc0 = found_docs[0];
-        ASSERT_HINT(abs(doc0.relevance-0.866434) <= 1e-5, "Wrong relevance"s);
+        const double relevance_for_document_1 = log(4.0/1.0)*(2.0/4.0) + log(4.0/2.0)*(0.0/4.0) + log(4.0/2.0)*(1.0/4.0);
+        ASSERT_HINT(abs(doc0.relevance-relevance_for_document_1) <= 1e-5, "Wrong relevance"s);
     }
 }
 
 void TestSearchServer() {
+    RUN_TEST(TestAddingDocuments);
     RUN_TEST(TestFindDocumentByQuery);
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     RUN_TEST(TestExcludeDocumentWithMinusWords);
