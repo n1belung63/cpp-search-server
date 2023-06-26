@@ -11,6 +11,9 @@
         "set": "cpp",
         "cmath": "cpp",
         "algorithm": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "stdexcept": "cpp",
+        "optional": "cpp"
     }
 }
