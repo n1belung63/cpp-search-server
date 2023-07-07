@@ -6,10 +6,7 @@ using namespace std::string_literals;
 
 SearchServer::SearchServer() { }
 
-SearchServer::SearchServer(const std::string & stop_words_string) : SearchServer::SearchServer(SplitIntoWords(stop_words_string))
-{
-    
-}
+SearchServer::SearchServer(const std::string & stop_words_string) : SearchServer::SearchServer(SplitIntoWords(stop_words_string)) { }
 
 void SearchServer::AddDocument(int document_id, const std::string& document, DocumentStatus status, const std::vector<int>& ratings) {
     if (document_id < 0) {

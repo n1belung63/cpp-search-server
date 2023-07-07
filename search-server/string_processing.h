@@ -7,9 +7,21 @@
 #include <map>
 
 #include "document.h"
-#include "paginator.h"
 
-using namespace std::string_literals;
+using namespace std::string_literals; // for using ""s literal here
+
+std::vector<std::string> SplitIntoWords(const std::string& text);
+
+template <typename StringContainer>
+std::set<std::string> MakeUniqueNonEmptyStrings(const StringContainer& strings) {
+    std::set<std::string> non_empty_strings;
+    for (const std::string& str : strings) {
+        if (!str.empty()) {
+            non_empty_strings.insert(str);
+        }
+    }
+    return non_empty_strings;
+}
 
 template <typename Key, typename Value>
 std::ostream& operator<<(std::ostream& out, const std::pair<Key, Value>& pair) {
@@ -57,14 +69,3 @@ std::ostream& operator<<(std::ostream& out, const std::map<Key, Value>& containe
 }
 
 std::ostream& operator<<(std::ostream& out, DocumentStatus status);
-
-void PrintDocument(const Document& document);
-
-template <typename Iterator>
-std::ostream& operator<<(std::ostream& out, IteratorRange<Iterator> page)
-{
-    for (auto doc = page.begin(); doc != page.end(); ++doc) {
-        PrintDocument(*doc);
-    }
-    return out;
-}

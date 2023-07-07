@@ -4,6 +4,8 @@
 #include <vector>
 #include <iterator>
 
+#include "document.h"
+
 template <typename Iterator>
 class IteratorRange {
 public: 
@@ -51,12 +53,12 @@ public:
 private:
     std::vector<IteratorRange<Iterator>> pages_;
 
-    std::vector<IteratorRange<Iterator>> FillPages(Iterator b, Iterator e, int page_size) {
+    std::vector<IteratorRange<Iterator>> FillPages(Iterator page_begin, Iterator page_end, int page_size) {
         std::vector<IteratorRange<Iterator>> pages;
 
-        size_t dist = distance(b, e);
+        size_t dist = distance(page_begin, page_end);
 
-        for (Iterator it = b; it < e; std::advance(it, page_size)) {
+        for (Iterator it = page_begin; it < page_end; std::advance(it, page_size)) {
             pages.push_back(IteratorRange(it, it + std::min(static_cast<size_t>(page_size) ,dist)));
             dist -= page_size;
         }
@@ -64,6 +66,15 @@ private:
         return pages;
     }
 };
+
+template <typename Iterator>
+std::ostream& operator<<(std::ostream& out, IteratorRange<Iterator> page)
+{
+    for (auto doc = page.begin(); doc != page.end(); ++doc) {
+        PrintDocument(*doc);
+    }
+    return out;
+}
 
 template <typename Container>
 auto Paginate(const Container& c, size_t page_size) {
