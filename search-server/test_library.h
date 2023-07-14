@@ -1,5 +1,4 @@
-#ifndef TEST_LIBRARY_
-#define TEST_LIBRARY_
+#pragma once
 
 #include <string>
 #include <iostream>
@@ -39,5 +38,3 @@ void RunTestImpl(const Func& func, const std::string& func_name) {
 }
 
 #define RUN_TEST(func)  RunTestImpl((func), #func)
-
-#endif

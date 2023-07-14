@@ -8,6 +8,7 @@
 #include <set>
 #include <numeric>
 #include <algorithm>
+#include <iterator>
 
 #include "document.h"
 #include "string_processing.h"
@@ -37,7 +38,25 @@ public:
 
     std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
 
-    int GetDocumentId(int index) const;
+    auto begin() noexcept {
+        return ids_.begin();
+    }
+
+    auto cbegin() const noexcept {
+        return ids_.cbegin();
+    }
+
+    auto end() noexcept {
+        return ids_.end();
+    }
+
+    auto cend() const noexcept {
+        return ids_.cend();
+    }
+
+    const std::map<std::string, double>& GetWordFrequencies(int document_id) const;
+
+    void RemoveDocument(int document_id);
 
 private:
     struct DocumentData {
@@ -47,8 +66,11 @@ private:
 
     std::set<std::string> stop_words_;
     std::map<std::string, std::map<int, double>> word_to_document_freqs_;
+    std::map<std::string, double> word_freqs_empty_;
+    std::map<int, std::map<std::string, double>> document_to_word_freqs_;
     std::map<int, DocumentData> documents_;
-    std::map<int, int> id_to_num_; 
+    std::map<int, int> id_to_num_;
+    std::set<int> ids_;
 
     struct QueryWord {
         std::string data;
