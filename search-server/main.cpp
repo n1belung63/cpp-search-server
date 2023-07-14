@@ -6,6 +6,7 @@
 #include "read_input_functions.h"
 #include "remove_duplicates.h"
 
+#include "log_duration.h"
 #include "test_example_functions.h"
 //#include "test_search_server.h"
 
@@ -44,5 +45,5 @@ int main() {
     
     cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
     RemoveDuplicates(search_server);
-    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
+    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl; 
 }
