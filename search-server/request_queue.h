@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <cstdint>
 
 #include "document.h"
 #include "search_server.h"

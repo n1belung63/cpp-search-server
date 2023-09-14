@@ -13,7 +13,7 @@ class LogDuration {
 public:
     using Clock = std::chrono::steady_clock;
 
-    LogDuration(const std::string& out_string, std::ostream& cout = std::cerr)
+    LogDuration(const std::string_view& out_string, std::ostream& cout = std::cerr)
         : out_string_(out_string), cout_(cout)
     {
         cout_ << out_string << std::endl;
@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    const std::string out_string_;
+    const std::string_view out_string_;
     std::ostream& cout_;
     const Clock::time_point start_time_ = Clock::now();
 };

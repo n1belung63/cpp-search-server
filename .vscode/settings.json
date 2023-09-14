@@ -66,6 +66,19 @@
         "xlocbuf": "cpp",
         "xlocmes": "cpp",
         "xlocmon": "cpp",
-        "xloctime": "cpp"
+        "xloctime": "cpp",
+        "ranges": "cpp",
+        "span": "cpp",
+        "execution": "cpp",
+        "list": "cpp",
+        "xhash": "cpp",
+        "functional": "cpp",
+        "unordered_map": "cpp",
+        "random": "cpp",
+        "string_view": "cpp",
+        "condition_variable": "cpp",
+        "coroutine": "cpp",
+        "resumable": "cpp",
+        "future": "cpp"
     }
 }

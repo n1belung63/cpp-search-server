@@ -15,7 +15,7 @@ void RemoveDuplicates(SearchServer& search_server) {
         words.clear();
 
         for (const auto& pair : search_server.GetWordFrequencies(document_id)) {
-            words.insert(pair.first);
+            words.insert(std::string(pair.first));
         }
 
         if (unique_documents.count(words) > 0) {

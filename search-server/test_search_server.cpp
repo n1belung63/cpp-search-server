@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <string>
+#include <string_view>
 #include <cmath>
 
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 void TestNoStopWords() {
     const int doc_id = 42;
@@ -114,6 +116,23 @@ void TestMatchingDocuments() {
         SearchServer server("in the"s);
         server.AddDocument(doc_id, content, status, ratings);
         const auto [words, doc_status] = server.MatchDocument("-fluffy groomed cat"s, doc_id);
+        ASSERT_HINT(words.empty(), "Document mast be excluded by minus word"s);     
+    }
+
+    {
+        SearchServer server("in the"s);
+        server.AddDocument(doc_id, content, status, ratings);
+        const auto [words, doc_status] = server.MatchDocument(std::execution::par, "fluffy groomed cat"s, doc_id);
+        ASSERT_EQUAL(words.size(), 2u);
+        ASSERT_EQUAL(words.at(0), "cat"s);
+        ASSERT_EQUAL(words.at(1), "fluffy"s);   
+        ASSERT_EQUAL(status, doc_status);
+    }
+
+    {
+        SearchServer server("in the"s);
+        server.AddDocument(doc_id, content, status, ratings);
+        const auto [words, doc_status] = server.MatchDocument(std::execution::par, "-fluffy groomed cat"s, doc_id);
         ASSERT_HINT(words.empty(), "Document mast be excluded by minus word"s);     
     }
 }

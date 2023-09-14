@@ -34,9 +34,7 @@ private:
 template <typename Iterator>
 class Paginator {
 public:
-    explicit Paginator(Iterator b, Iterator e, int page_size) : 
-        pages_(FillPages(b, e, page_size)) 
-        { }
+    explicit Paginator(Iterator b, Iterator e, int page_size) : pages_(FillPages(b, e, page_size)) { }
 
     auto begin() const {
         return pages_.begin();
